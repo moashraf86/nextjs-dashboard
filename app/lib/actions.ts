@@ -6,8 +6,6 @@ import { signIn } from "@/auth";
 import { AuthError } from "next-auth";
 import { db } from "@vercel/postgres";
 
-// define client
-const client = await db.connect();
 export type State = {
   errors?: {
     customer_id?: string[];
@@ -32,6 +30,8 @@ const CreateInvoice = invoiceSchema.omit({ id: true, date: true });
 
 // create invoices action
 export async function createInvoice(prevState: State, formData: FormData) {
+  // define client
+  const client = await db.connect();
   // parse form data into invoice object
   const validatedFields = CreateInvoice.safeParse({
     customer_id: formData.get("customerId"),
@@ -82,6 +82,8 @@ export async function updateInvoice(
   prevState: State,
   formData: FormData
 ) {
+  // define client
+  const client = await db.connect();
   // parse form data into invoice object
   const validatedFields = UpdateInvoice.safeParse({
     customer_id: formData.get("customerId"),
@@ -124,6 +126,8 @@ export async function updateInvoice(
 
 // delete invoice action
 export async function deleteInvoice(id: string) {
+  // define client
+  const client = await db.connect();
   // delete invoice from database
   try {
     await client.sql`

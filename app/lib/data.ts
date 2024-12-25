@@ -9,10 +9,8 @@ import {
 } from "./definitions";
 import { formatCurrency } from "./utils";
 
-// define client
-const client = await db.connect();
-
 export async function fetchRevenue() {
+  const client = await db.connect();
   try {
     const data = await client.sql<Revenue>`SELECT * FROM revenue`;
     return data.rows;
@@ -23,10 +21,7 @@ export async function fetchRevenue() {
 }
 
 export async function fetchLatestInvoices() {
-  // Simulate a 3 second delay
-  console.log("fetching revenue data...");
-  await new Promise((resolve) => setTimeout(resolve, 3000));
-  console.log("fetching revenue data...done");
+  const client = await db.connect();
   try {
     // Fetch last 5 invoices
     const data = await client.sql<LatestInvoice>`
@@ -56,6 +51,7 @@ export async function fetchLatestInvoices() {
 }
 
 export async function fetchCardData() {
+  const client = await db.connect();
   try {
     const invoiceCountPromise = client.sql`SELECT COUNT(*) FROM invoices`;
     const customerCountPromise = client.sql`SELECT COUNT(*) FROM customers`;
@@ -95,6 +91,7 @@ export async function fetchFilteredInvoices(
   query: string,
   currentPage: number
 ) {
+  const client = await db.connect();
   const offset = (currentPage - 1) * ITEMS_PER_PAGE;
 
   try {
@@ -127,6 +124,7 @@ export async function fetchFilteredInvoices(
 }
 
 export async function fetchInvoicesPages(query: string) {
+  const client = await db.connect();
   try {
     const count = await client.sql`SELECT COUNT(*)
       FROM invoices
@@ -148,6 +146,7 @@ export async function fetchInvoicesPages(query: string) {
 }
 
 export async function fetchInvoiceById(id: string) {
+  const client = await db.connect();
   try {
     const data = await client.sql<InvoiceForm>`
       SELECT
@@ -172,6 +171,7 @@ export async function fetchInvoiceById(id: string) {
 }
 
 export async function fetchCustomers() {
+  const client = await db.connect();
   try {
     const data = await client.sql<CustomerField>`
       SELECT
@@ -189,6 +189,7 @@ export async function fetchCustomers() {
 }
 
 export async function fetchFilteredCustomers(query: string) {
+  const client = await db.connect();
   try {
     const data = await client.sql<CustomersTableType>`
 		SELECT

@@ -1,4 +1,4 @@
-import { sql } from "@vercel/postgres";
+import { db, sql } from "@vercel/postgres";
 import {
   CustomerField,
   CustomersTableType,
@@ -10,6 +10,8 @@ import {
 import { formatCurrency } from "./utils";
 import { createClient } from "../utils/supabase/server";
 import { cookies } from "next/headers";
+
+const client = await db.connect();
 
 export async function fetchRevenue() {
   const cookieStore = await cookies();
@@ -249,24 +251,15 @@ export async function fetchInvoiceById(id: string) {
 }
 
 export async function fetchCustomers() {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
   try {
-    // const data = await sql<CustomerField>`
-    //   SELECT
-    //     id,
-    //     name
-    //   FROM customers
-    //   ORDER BY name ASC
-    // `;
-    const { data: customers, error } = await supabase
-      .from("customers")
-      .select("id, name")
-      .order("name", { ascending: true });
-    if (error) {
-      throw error;
-    }
-    return customers as CustomerField[];
+    const data = await client.sql<CustomerField>`
+      SELECT
+        id,
+        name
+      FROM customers
+      ORDER BY name ASC
+    `;
+    return data.rows;
   } catch (err) {
     console.error("Database Error:", err);
     throw new Error("Failed to fetch all customers.");

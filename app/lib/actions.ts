@@ -1,12 +1,13 @@
 "use server";
 import { z } from "zod";
-import { cookies } from "next/headers";
-import { createClient } from "../utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { signIn } from "@/auth";
 import { AuthError } from "next-auth";
+import { db } from "@vercel/postgres";
 
+// define client
+const client = await db.connect();
 export type State = {
   errors?: {
     customer_id?: string[];
@@ -31,10 +32,6 @@ const CreateInvoice = invoiceSchema.omit({ id: true, date: true });
 
 // create invoices action
 export async function createInvoice(prevState: State, formData: FormData) {
-  // get cookies and create supabase client
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-
   // parse form data into invoice object
   const validatedFields = CreateInvoice.safeParse({
     customer_id: formData.get("customerId"),
@@ -61,14 +58,10 @@ export async function createInvoice(prevState: State, formData: FormData) {
 
   // insert new invoice into database
   try {
-    await supabase.from("invoices").insert([
-      {
-        customer_id,
-        amount: amountInCents,
-        status,
-        date,
-      },
-    ]);
+    await client.sql`
+			INSERT INTO invoices (customer_id, amount, status, date)
+			VALUES (${customer_id}, ${amountInCents}, ${status}, ${date})
+		`;
   } catch (error) {
     console.log("error", error);
     return { message: "Failed to create invoice" };
@@ -89,10 +82,6 @@ export async function updateInvoice(
   prevState: State,
   formData: FormData
 ) {
-  // get cookies and create supabase client
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-
   // parse form data into invoice object
   const validatedFields = UpdateInvoice.safeParse({
     customer_id: formData.get("customerId"),
@@ -116,21 +105,13 @@ export async function updateInvoice(
 
   // update invoice in database
   try {
-    const { error } = await supabase
-      .from("invoices")
-      .update({
-        customer_id,
-        amount: amountInCents,
-        status,
-      })
-      .eq("id", id);
-
-    if (error) {
-      throw error;
-    }
+    await client.sql`
+			UPDATE invoices
+			SET customer_id = ${customer_id}, amount = ${amountInCents}, status = ${status}
+			WHERE id = ${id}
+		`;
   } catch (error) {
     console.log("error", error);
-
     return { message: "Failed to update invoice" };
   }
 
@@ -143,17 +124,12 @@ export async function updateInvoice(
 
 // delete invoice action
 export async function deleteInvoice(id: string) {
-  // throw new Error("Not implemented");
-  // get cookies and create supabase client
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-
   // delete invoice from database
   try {
-    const { error } = await supabase.from("invoices").delete().eq("id", id);
-    if (error) {
-      throw error;
-    }
+    await client.sql`
+			DELETE FROM invoices
+			WHERE id = ${id}
+		`;
   } catch (error) {
     console.log("error", error);
     return { message: "Failed to delete invoice" };

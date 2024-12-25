@@ -1,28 +1,19 @@
 import NextAuth from "next-auth";
 import { authConfig } from "./auth.config";
 import Credentials from "next-auth/providers/credentials";
-import { createClient } from "./app/utils/supabase/server";
-import { cookies } from "next/headers";
 import { z } from "zod";
 import { User } from "./app/lib/definitions";
 import bcrypt from "bcrypt";
+import { db } from "@vercel/postgres";
 
+// define client
+const client = await db.connect();
 // query the user credentials from the database
 export const getUser = async (email: string): Promise<User | undefined> => {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
   try {
-    const { data: user, error } = await supabase
-      .from("users")
-      .select()
-      .eq("email", email);
-
-    if (error) {
-      throw error;
-    }
-
-    console.log("user", user);
-    return user ? user[0] : undefined;
+    const user =
+      await client.sql<User>`SELECT * FROM users WHERE email = ${email}`;
+    return user.rows[0];
   } catch (error) {
     console.error("Database Error:", error);
     throw new Error("Failed to fetch user.");
